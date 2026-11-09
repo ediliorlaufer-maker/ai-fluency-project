@@ -1,4 +1,4 @@
 # About me
 
-Name: Alon
+Name: Edi
 Faculty: Chemical Engineering
