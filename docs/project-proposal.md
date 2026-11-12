@@ -1,5 +1,7 @@
 # Project proposal
 
+Degree level: PhD
+
 ## 1. The problem and goal
 
 (Explain the problem you want to solve and why it matters. Describe what you
@@ -9,9 +11,8 @@ field understand the problem.)
 
 **The problem and goal in my project:**
 
-Ion-exchange membranes such as Nafion are characterized by broadband dielectric spectroscopy (1 MHz-1 GHz). The spectra are interpreted by fitting models, which give a relaxation time, a strength and a shape for each process. The difficulty is not running a fit but deciding which model to fit: which relaxation function (Havriliak-Negami, Cole-Cole, Cole-Davidson, Debye), how many processes, whether a conductivity contribution or an electrode-polarization term is also needed, which frequency window, and which weighting. Several choices fit almost equally well, and a model that fits well can still have parameters the data cannot determine. Today I do this by hand, one spectrum at a time. For example, a single-relaxation fit of one Nafion spectrum looked acceptable by R squared but left structured residuals of 20-36% at the high-frequency end, and one shape parameter sat on its bound. That means the model was wrong, not just the fit.
-
-Improvement is measured in three ways. On synthetic spectra where I know the generating model, how often the agent picks the correct elements and number of processes. On spectra I have fit by hand, how closely it agrees with me. And how often it wrongly accepts an extra process in pure noise. The limits are that parameters stay within physical bounds, a model with a parameter on a bound or with unidentifiable parameters is flagged and never silently accepted, and the physical interpretation of a relaxation always stays with me.
+I study ion-exchange membranes used in fuel cells and water treatment. One way to learn how charged particles move inside them is to measure how the material responds to a rapidly oscillating electric field. The measurement gives a curve, and to understand it I fit mathematical models to it. Running a fit is easy. The hard part is choosing which model to fit, because several different models can match the same curve almost equally well while meaning different things physically. Today I make that choice by hand, one measurement at a time, which is slow and hard to compare across many models.
+The goal is a system that tries different models on a measured curve, checks how well each one works, and recommends the most trustworthy one. I measure improvement by testing it on made-up curves where I know the right answer, and by comparing it with fits I have already done and trust. The limits are that the results must stay physically reasonable, the system must say so when the data cannot decide between models, and the scientific interpretation always stays with me.
 
 ## 2. The simulator
 
@@ -23,7 +24,9 @@ name an option you want to explore and explain what you need to check.)
 
 **The simulator in my project:**
 
-The ground is a deterministic Python fitter, not a time-stepping simulator. It combines a forward model of the dielectric spectrum with a least-squares fit. The model is assembled from optional elements: one or more relaxation functions (Havriliak-Negami, Cole-Cole, Cole-Davidson, Debye), a DC conductivity term, and a constant phase element (CPE) for electrode polarization (planned; the relaxation functions and the conductivity term are implemented). It takes a configuration file (YAML or JSON) that specifies which elements are included, the frequency window, the weighting, the parameter bounds, and the starting values. It returns the fitted parameters with uncertainties, the residuals, goodness-of-fit numbers, and diagnostics: which parameters hit a bound, how strongly parameters are correlated, and whether the residuals still show structure. It runs on my computer in seconds, has no GUI, and gives identical output for identical input. It already has tests: a comparison against my MATLAB reference output and a recovery test on synthetic data.
+The simulator is a Python program that stands in for the real experiment's analysis. It is not a time-stepping simulation. Given a description of a membrane's measured response, it builds a mathematical curve out of a chosen set of ingredients (one or more characteristic "wiggles", a term for current flowing through the material, and, planned but not yet built, a term for effects at the electrodes) and adjusts the numbers inside it until the curve matches the measurement as closely as it can.
+It takes a plain text file in YAML or JSON that says which ingredients to include, which part of the measured range to use, how to weight the points, and the limits and starting guesses for each number. It returns the fitted numbers with their uncertainty, how far the curve still misses the data, and warning signs: whether a number got stuck at its limit, whether two numbers are trading off against each other, and whether the leftover error still has a pattern.
+It runs on my computer in seconds, needs no graphical interface, and gives the same output for the same input every time. It is already tested against results from my earlier MATLAB code and against made-up data where I know the right answer.
 
 ## 3. The agent's role
 
@@ -36,11 +39,13 @@ you still need to answer.)
 
 **The agent in my project:**
 
-The agent chooses what to try next. It reads the diagnostics from a fit and then changes the configuration: which relaxation family to use, the number of relaxations (1–2, possibly 3), whether to add or remove a conductivity contribution or a CPE, the frequency window, the weighting, and the starting values and bounds, restricted to physical ranges (for example, shape parameters between 0.2 and 1). It decides when to stop and recommends a model with a stated reason, and flags anything the data cannot determine. A human approves before it accepts more than one relaxation, a parameter on a bound, or unidentifiable parameters.
-
-A typical decision: a rising low-frequency tail in the residuals can mean a missing conductivity or electrode-polarization term and not a missing relaxation. Telling these apart, and saying why, is the judgment I want from the agent.
-
-A simple program could try every combination and pick the lowest information criterion, and for clean data that would work. I expect the language model to add value where that fails: reading structured residuals to decide which kind of element is missing, noticing that a high-frequency artifact (not a real process) is driving the fit so the window should change, and explaining a recommendation or a refusal to choose. I will test this by comparing the agent against that brute-force baseline, and if the baseline wins, I will say so in the report.
+The agent is the part that decides what to try next. After each fit, it looks at the result and asks: where does the model still disagree with the measurement, and what is the most likely reason? It then changes the setup and runs the fit again. The things it may change are:
+1-the type of model, and how many separate effects it includes
+2-extra ingredients, for example a term for electric current flowing through the membrane, or for effects at the electrodes
+3-which part of the measured range is used, and how the points are weighted
+4-the starting guesses for the numbers being fitted, which must stay within physically sensible limits
+When it stops, it recommends one model, explains why, and says what it could not determine. Before accepting anything risky, such as a model with extra effects or a result pushed against its limits, it has to ask me.
+A simple program could try every combination and pick the best score, and for clean data that works. I expect the language model to help where the choice depends on understanding the pattern of the mistakes. For example, a certain kind of leftover error can mean an ingredient is missing and not that another effect is needed, and an odd feature at the edge of the range can be a measurement artifact rather than real behavior. I will compare the agent against the try-everything program, and if the simple program does as well, I will report that.
 
 ## Explain your project to someone outside your field
 
