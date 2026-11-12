@@ -15,7 +15,6 @@ I study ion-exchange membranes used in fuel cells and water treatment. One way t
 The goal is a system that tries different models on a measured curve, checks how well each one works, and recommends the most trustworthy one. I measure improvement by testing it on made-up curves where I know the right answer, and by comparing it with fits I have already done and trust. The limits are that the results must stay physically reasonable, the system must say so when the data cannot decide between models, and the scientific interpretation always stays with me.
 
 ## 2. The simulator
-
 (Describe a program or model that could simulate your system and calculate what
 happens under different conditions. Explain what inputs it takes and what
 results it produces. State whether it can run on your computer and accept inputs
@@ -40,10 +39,15 @@ you still need to answer.)
 **The agent in my project:**
 
 The agent is the part that decides what to try next. After each fit, it looks at the result and asks: where does the model still disagree with the measurement, and what is the most likely reason? It then changes the setup and runs the fit again. The things it may change are:
+
 1-the type of model, and how many separate effects it includes
+
 2-extra ingredients, for example a term for electric current flowing through the membrane, or for effects at the electrodes
+
 3-which part of the measured range is used, and how the points are weighted
+
 4-the starting guesses for the numbers being fitted, which must stay within physically sensible limits
+
 When it stops, it recommends one model, explains why, and says what it could not determine. Before accepting anything risky, such as a model with extra effects or a result pushed against its limits, it has to ask me.
 A simple program could try every combination and pick the best score, and for clean data that works. I expect the language model to help where the choice depends on understanding the pattern of the mistakes. For example, a certain kind of leftover error can mean an ingredient is missing and not that another effect is needed, and an odd feature at the edge of the range can be a measurement artifact rather than real behavior. I will compare the agent against the try-everything program, and if the simple program does as well, I will report that.
 
